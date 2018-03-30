@@ -1,0 +1,16 @@
+#play-area {
+    display: flex;
+}
+
+.play-box {
+    border: 1px solid black;
+    width: 200px;
+}
+
+#chat-box {
+    overflow: scroll;
+}
+
+/* TO-DO
+- Turn "rock" "paper" "scissors" into icons w/hover and click effects 
+*/
