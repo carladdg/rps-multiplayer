@@ -9,57 +9,82 @@ var config = {
 };
 firebase.initializeApp(config);
 
+// Create Firebase references
 var database = firebase.database();
-var players = database.ref("/players");
+var players = database.ref("players");
 
-var numberOfPlayers = 0;
+// Create player and game lockout variables
+var playerOneOccupied = false;
+var playerTwoOccupied = false;
 var gameIsFull = false;
 
+// Pull and update player data from Firebase when players are added
 players.on("value", function(snapshot) {
-    // console.log(snapshot.child("1").val());
-    // console.log(snapshot.child("2").val());
+    if (snapshot.hasChild("1")) {
+        playerOneOccupied = true;
+        console.log("1: " + playerOneOccupied);
+        displayPlayerInfo("1", snapshot.child("1/name").val(), snapshot.child("1/wins").val(), snapshot.child("1/losses").val());
+    }
 
-    numberOfPlayers = snapshot.numChildren();
-
-    // Display player information in appropriate boxes
+    if (snapshot.hasChild("2")) {
+        playerTwoOccupied = true;
+        console.log("2: " + playerTwoOccupied);
+        displayPlayerInfo("2", snapshot.child("2/name").val(), snapshot.child("2/wins").val(), snapshot.child("2/losses").val());
+    }
 })
 
+// Check if game is full
 var checkGameCapacity = function() {
-    if (numberOfPlayers === 2) {
+    if (playerOneOccupied && playerTwoOccupied) {
         gameIsFull = true;
     }
 }
 
+// Add player to Firebase if game is not full
 var addPlayer = function(name) {
-    var playerNumber = numberOfPlayers + 1;
-    players.child(playerNumber).set({
-        name: "Test",
-        wins: 0,
-        losses: 0
-    });
+    var playerNumber;
+    if (!playerOneOccupied) {
+        playerNumber = 1;
+    } else {
+        playerNumber = 2;
+    }
 
-    // Add to connected ref?
+    players.child(playerNumber).set({
+        name: name,
+        wins: 0,
+        losses: 0,
+        connected: true
+    });
+}
+
+// Display player info in HTML
+var displayPlayerInfo = function(playerNumber, playerName, wins, losses) {
+    $("#player-" + playerNumber + "-name").text(playerName);
+    $("#player-" + playerNumber + "-stats").text("Wins: " + wins + " | Losses: " + losses);
 }
 
 // Click events
-
+// Add player
 $("#start-button").on("click", function() {
     event.preventDefault();
-
-    checkGameCapacity();
-    if (!gameIsFull) {
-        // Grab player name and feed into function
-        addPlayer();
-    } else {
-        console.log("Game is Full");
+    
+    var playerName = $("#player-name").val().trim()
+    if (playerName) {
+        checkGameCapacity();
+        if (!gameIsFull) {
+            addPlayer(playerName);
+            $("#player-name").val("");
+        } else {
+            console.log("Game is Full");
+        }
     }
 });
 
+// Send chat message
 $("#chat-button").on("click", function() {
     event.preventDefault();
 });
 
 /* TO DO
-- If two players are already signed in, don't allow new players 
 - Player needs to be connected - if disconnect, remove their info and decrease numberOfPlayers
 */
