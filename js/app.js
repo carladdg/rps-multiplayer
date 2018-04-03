@@ -17,50 +17,114 @@ var players = database.ref("players");
 var playerOneOccupied = false;
 var playerTwoOccupied = false;
 var gameIsFull = false;
+var localPlayerId = 0;
+var turn = 0;
 
 // Pull and update player data from Firebase when players are added
 players.on("value", function(snapshot) {
     if (snapshot.hasChild("1")) {
         playerOneOccupied = true;
-        console.log("1: " + playerOneOccupied);
-        displayPlayerInfo("1", snapshot.child("1/name").val(), snapshot.child("1/wins").val(), snapshot.child("1/losses").val());
+        displayPlayerInfo("1", snapshot.child("1/name").val());
+        displayPlayerBox("1", snapshot.child("1/name").val(), snapshot.child("1/wins").val(), snapshot.child("1/losses").val());
+    } else {
+        playerOneOccupied = false;
     }
 
     if (snapshot.hasChild("2")) {
         playerTwoOccupied = true;
-        console.log("2: " + playerTwoOccupied);
-        displayPlayerInfo("2", snapshot.child("2/name").val(), snapshot.child("2/wins").val(), snapshot.child("2/losses").val());
+        displayPlayerInfo("2", snapshot.child("2/name").val());
+        displayPlayerBox("2", snapshot.child("2/name").val(), snapshot.child("2/wins").val(), snapshot.child("2/losses").val());
+    } else {
+        playerTwoOccupied = false;
+    }
+
+    if (snapshot.hasChild("1") && snapshot.hasChild("2")) {
+        gameIsFull = true;
+        startRound();
+    } else {
+        gameIsFull = false;
     }
 })
 
-// Check if game is full
-var checkGameCapacity = function() {
-    if (playerOneOccupied && playerTwoOccupied) {
-        gameIsFull = true;
+// Display player info in HTML
+function displayPlayerInfo(playerNumber, playerName) {
+    if (localPlayerId === 1) {
+        $("#new-player-form").hide();
+        $("#player-1-info").show()
+        $("#player-2-info").hide();
+    } else if (localPlayerId === 2) {
+        $("#new-player-form").hide();
+        $("#player-1-info").hide();
+        $("#player-2-info").show();
+    } else {
+        $("#player-1-info").hide();
+        $("#player-2-info").hide();
     }
+
+    $("#player-" + playerNumber + "-greeting").text("Hi, " + playerName + "! You are Player " + playerNumber + ".");
+}
+
+// Display player box in HTML
+function displayPlayerBox(playerNumber, playerName, wins, losses) {
+    $("#player-" + playerNumber + "-name").text(playerName);
+    $("#player-" + playerNumber + "-stats").text("Wins: " + wins + " | Losses: " + losses);
 }
 
 // Add player to Firebase if game is not full
-var addPlayer = function(name) {
-    var playerNumber;
+function addPlayer(name) {
     if (!playerOneOccupied) {
-        playerNumber = 1;
+        localPlayerId = 1;
     } else {
-        playerNumber = 2;
+        localPlayerId = 2;
     }
 
-    players.child(playerNumber).set({
+    players.child(localPlayerId).set({
         name: name,
         wins: 0,
         losses: 0,
-        connected: true
     });
+
+    database.ref("players/" + localPlayerId).onDisconnect().remove();
 }
 
-// Display player info in HTML
-var displayPlayerInfo = function(playerNumber, playerName, wins, losses) {
-    $("#player-" + playerNumber + "-name").text(playerName);
-    $("#player-" + playerNumber + "-stats").text("Wins: " + wins + " | Losses: " + losses);
+// Set turn to 1 so gameplay can start
+function startRound(name) {
+    database.ref("turn").set("1");
+    turn = 1;
+
+    if (localPlayerId === 1) {
+        displayChoices();
+    } else {
+
+    }
+}
+
+function displayChoices() {
+
+}
+
+// Run the resetPlayer function when a player exits the game
+players.on("child_removed", function(snapshot) {
+    resetPlayer(snapshot.key);
+})
+
+// Reset localPlayerId, reset player name and stats to default "Waiting for Player" text
+function resetPlayer(playerNumber) {
+    if (localPlayerId === playerNumber) {
+        localPlayerId = 0;
+    }
+
+    $("#player-" + playerNumber + "-name").text("Waiting for Player " + playerNumber);
+    $("#player-" + playerNumber + "-stats").text("");
+
+    reopenGame();
+}
+
+function reopenGame() {
+    if (localPlayerId === 0) {
+        $("#new-player-form").show();
+        $("#game-full-message").remove();
+    }
 }
 
 // Click events
@@ -70,12 +134,12 @@ $("#start-button").on("click", function() {
     
     var playerName = $("#player-name").val().trim()
     if (playerName) {
-        checkGameCapacity();
         if (!gameIsFull) {
             addPlayer(playerName);
             $("#player-name").val("");
         } else {
-            console.log("Game is Full");
+            $("#new-player-form").hide();
+            $("<p>").attr("id", "game-full-message").text("Sorry, the game is full! Feel free to watch and wait for it to reopen.").appendTo("#new-player-area");
         }
     }
 });
@@ -84,7 +148,3 @@ $("#start-button").on("click", function() {
 $("#chat-button").on("click", function() {
     event.preventDefault();
 });
-
-/* TO DO
-- Player needs to be connected - if disconnect, remove their info and decrease numberOfPlayers
-*/

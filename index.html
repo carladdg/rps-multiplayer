@@ -11,21 +11,29 @@
 </head>
 <body>
     <h1>Rock Paper Scissors</h1>
-    <div id="new-player">
-        <form>
+    <div id="new-player-area">
+        <form id="new-player-form">
             <input placeholder="Name" type="text" id="player-name">
             <input type="submit" value="Start" id="start-button">
         </form>
+        <div id="player-1-info">
+            <p id="player-1-greeting"></p>
+            <p id="player-1-status"></p>
+        </div>
+        <div id="player-2-info">
+            <p id="player-2-greeting"></p>
+            <p id="player-2-status"></p>
+        </div>
     </div>
     <div id="play-area">
-        <div class="play-box" id="player-one-box">
+        <div class="play-box" id="player-1-box">
             <p id="player-1-name">Waiting for Player 1</p>
             <p id="player-1-stats"></p>
         </div>
         <div class="play-box" id="results-box">
 
         </div>
-        <div class="play-box" id="player-two-box">
+        <div class="play-box" id="player-2-box">
             <p id="player-2-name">Waiting for Player 2</p>
             <p id="player-2-stats"></p>
         </div>
